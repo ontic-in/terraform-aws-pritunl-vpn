@@ -3,14 +3,7 @@
 # Compatible with plain NFS4 mount without requiring EFS helper or IAM authentication
 
 locals {
-  service_name = "${var.prefix}-${var.environment}-pritunl-data"
-  tags = merge(
-    {
-      Terraform   = "true"
-      Environment = var.environment
-    },
-    var.tags
-  )
+  efs_name = "${var.prefix}-${var.environment}-pritunl-data"
 }
 
 # EFS File System - encrypted but no IAM policy
@@ -20,7 +13,7 @@ resource "aws_efs_file_system" "pritunl" {
   throughput_mode  = "bursting"
 
   tags = merge({
-    Name = "${local.service_name}-efs"
+    Name = "${local.efs_name}-efs"
   }, local.tags)
 
   lifecycle {
@@ -30,7 +23,7 @@ resource "aws_efs_file_system" "pritunl" {
 
 # Security Group for EFS
 resource "aws_security_group" "efs" {
-  name        = "${local.service_name}-efs-sg"
+  name        = "${local.efs_name}-efs-sg"
   description = "Security group for Pritunl EFS mount targets"
   vpc_id      = var.vpc_id
 
@@ -51,7 +44,7 @@ resource "aws_security_group" "efs" {
   }
 
   tags = merge({
-    Name = "${local.service_name}-efs-sg"
+    Name = "${local.efs_name}-efs-sg"
   }, local.tags)
 }
 

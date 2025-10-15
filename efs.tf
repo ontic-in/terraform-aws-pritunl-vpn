@@ -4,6 +4,9 @@
 
 locals {
   efs_name = "${var.prefix}-${var.environment}-pritunl-data"
+  # Use EC2 security group directly for EFS mount targets
+  # This allows EC2 instances to access EFS using their own security group
+  efs_security_groups = var.is_create_security_group ? [aws_security_group.this[0].id] : []
 }
 
 # EFS File System - encrypted but no IAM policy
@@ -21,40 +24,14 @@ resource "aws_efs_file_system" "pritunl" {
   }
 }
 
-# Security Group for EFS
-resource "aws_security_group" "efs" {
-  name        = "${local.efs_name}-efs-sg"
-  description = "Security group for Pritunl EFS mount targets"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description       = "NFS from Pritunl EC2 instances"
-    from_port         = 2049
-    to_port           = 2049
-    protocol          = "tcp"
-    security_groups   = var.is_create_security_group ? [aws_security_group.this[0].id] : []
-    cidr_blocks       = var.is_create_security_group ? [] : [data.aws_vpc.this.cidr_block]
-  }
-
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge({
-    Name = "${local.efs_name}-efs-sg"
-  }, local.tags)
-}
-
 # EFS Mount Targets - one per subnet
+# Uses the EC2 security group directly - no separate EFS security group needed
+# The EC2 security group allows all traffic within itself (self-referencing)
 resource "aws_efs_mount_target" "pritunl" {
   count           = length(var.private_subnet_ids)
   file_system_id  = aws_efs_file_system.pritunl.id
   subnet_id       = var.private_subnet_ids[count.index]
-  security_groups = [aws_security_group.efs.id]
+  security_groups = local.efs_security_groups
 }
 
 # EFS Backup Policy

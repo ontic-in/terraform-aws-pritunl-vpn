@@ -11,10 +11,6 @@ resource "aws_autoscaling_group" "this" {
     version = "$Latest"
   }
 
-  # Target groups are attached via aws_autoscaling_attachment resources below
-  # This allows external layers (e.g., platform layer) to attach additional target groups
-  # without conflicts or state drift
-
   dynamic "tag" {
     for_each = merge(local.tags, { Name = local.name })
     content {

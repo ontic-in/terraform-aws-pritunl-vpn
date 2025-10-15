@@ -20,12 +20,12 @@ output "vpn_private_dns" {
 
 output "efs_id" {
   description = "The ID that identifies the file system for pritunl vpn"
-  value       = module.efs.id
+  value       = aws_efs_file_system.pritunl.id
 }
 
 output "efs_dns_name" {
   description = "The DNS name for the filesystem"
-  value       = module.efs.dns_name
+  value       = aws_efs_file_system.pritunl.dns_name
 }
 
 output "security_group_id" {

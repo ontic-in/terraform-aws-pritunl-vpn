@@ -7,7 +7,7 @@ module "launch_template" {
   name        = "pritunl-vpn"
   user_data = base64encode(templatefile("${path.module}/template/user_data.sh",
     {
-      efs_id = module.efs.id
+      efs_id = aws_efs_file_system.pritunl.id
   }))
   iam_instance_profile   = { arn : aws_iam_instance_profile.this.arn }
   ami_id                 = var.ami == "" ? data.aws_ami.amazon_linux.id : var.ami

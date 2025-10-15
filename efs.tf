@@ -28,11 +28,12 @@ resource "aws_security_group" "efs" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "NFS from VPC"
-    from_port   = 2049
-    to_port     = 2049
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
+    description       = "NFS from Pritunl EC2 instances"
+    from_port         = 2049
+    to_port           = 2049
+    protocol          = "tcp"
+    security_groups   = var.is_create_security_group ? [aws_security_group.this[0].id] : []
+    cidr_blocks       = var.is_create_security_group ? [] : [data.aws_vpc.this.cidr_block]
   }
 
   egress {

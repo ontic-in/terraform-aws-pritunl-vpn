@@ -25,6 +25,13 @@ locals {
       port        = "443"
       cidr_blocks = var.custom_https_allow_cidr != null ? var.custom_https_allow_cidr : local.default_https_allow_cidr
     }
+    # Allow NFS access within the same security group for EFS
+    allow_nfs_from_self = {
+      port                         = "2049"
+      protocol                     = "tcp"
+      source_security_group_id     = var.is_create_security_group ? aws_security_group.this[0].id : null
+      description                  = "NFS access for EFS mount targets"
+    }
     },
   var.security_group_ingress_rules)
 

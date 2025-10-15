@@ -11,7 +11,10 @@ resource "aws_autoscaling_group" "this" {
     version = "$Latest"
   }
 
-  target_group_arns = concat(aws_lb_target_group.public.*.arn, aws_lb_target_group.private.*.arn)
+  # Target groups are attached via aws_autoscaling_attachment resources below
+  # This allows external layers (e.g., platform layer) to attach additional target groups
+  # without conflicts or state drift
+
   dynamic "tag" {
     for_each = merge(local.tags, { Name = local.name })
     content {
@@ -24,6 +27,22 @@ resource "aws_autoscaling_group" "this" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+# Attach public NLB target groups to ASG
+resource "aws_autoscaling_attachment" "public" {
+  count = var.is_create_lb ? length(local.public_rule) : 0
+
+  autoscaling_group_name = aws_autoscaling_group.this.name
+  lb_target_group_arn    = aws_lb_target_group.public[count.index].arn
+}
+
+# Attach private NLB target groups to ASG
+resource "aws_autoscaling_attachment" "private" {
+  count = var.is_create_private_lb ? length(local.private_rule) : 0
+
+  autoscaling_group_name = aws_autoscaling_group.this.name
+  lb_target_group_arn    = aws_lb_target_group.private[count.index].arn
 }
 
 

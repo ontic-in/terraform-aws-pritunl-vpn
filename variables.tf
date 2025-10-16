@@ -85,6 +85,12 @@ variable "public_rule" {
       protocol              = "UDP"
       health_check_port     = 443
       health_check_protocol = "TCP"
+    },
+    {
+      port                  = 12384
+      protocol              = "UDP"
+      health_check_port     = 443
+      health_check_protocol = "TCP"
     }
   ]
 }

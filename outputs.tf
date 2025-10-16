@@ -57,3 +57,18 @@ output "aws_lb_private_zone_id" {
   description = "zone id of the application loadbalancer"
   value       = try(aws_lb.private[0].zone_id, "")
 }
+
+output "autoscaling_group_name" {
+  description = "The name of the Auto Scaling Group"
+  value       = aws_autoscaling_group.this.name
+}
+
+output "autoscaling_group_id" {
+  description = "The ID of the Auto Scaling Group"
+  value       = aws_autoscaling_group.this.id
+}
+
+output "autoscaling_group_arn" {
+  description = "The ARN of the Auto Scaling Group"
+  value       = aws_autoscaling_group.this.arn
+}

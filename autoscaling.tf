@@ -43,7 +43,7 @@ resource "aws_autoscaling_attachment" "private" {
 
 
 resource "aws_autoscaling_policy" "this" {
-  name                   = "pritunl-vpn-auto-scaling-policy"
+  name                   = "${local.name}-auto-scaling-policy"
   policy_type            = "TargetTrackingScaling"
   autoscaling_group_name = aws_autoscaling_group.this.name
   target_tracking_configuration {

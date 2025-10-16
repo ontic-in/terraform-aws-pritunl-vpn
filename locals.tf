@@ -38,20 +38,47 @@ locals {
   public_rule              = concat(var.public_rule, var.is_enabled_https_public ? local.console_rule : [])
   private_rule             = concat(var.private_rule, local.console_rule)
   default_https_allow_cidr = var.is_enabled_https_public ? ["0.0.0.0/0"] : [data.aws_vpc.this.cidr_block]
-  security_group_ingress_rules = merge({
-    allow_to_config_vpn = {
-      port        = "443"
-      cidr_blocks = var.custom_https_allow_cidr != null ? var.custom_https_allow_cidr : local.default_https_allow_cidr
-    }
-    # Allow NFS access within the same security group for EFS
-    allow_nfs_from_self = {
-      port                     = "2049"
-      protocol                 = "tcp"
-      source_security_group_id = var.is_create_security_group ? aws_security_group.this[0].id : null
-      description              = "NFS access for EFS mount targets"
-    }
+
+  # Dynamically generate security group rules based on NLB listener ports
+  # This allows access from anywhere (0.0.0.0/0) but only on the specific ports used by listeners
+  dynamic_listener_rules = merge(
+    # Rules for public NLB listeners (if enabled)
+    var.is_create_lb ? {
+      for idx, rule in local.public_rule :
+      "allow_public_listener_${rule.port}_${lower(rule.protocol)}" => {
+        port        = rule.port
+        protocol    = lower(rule.protocol)
+        cidr_blocks = ["0.0.0.0/0"]
+        description = "Allow access to public NLB listener on port ${rule.port}/${upper(rule.protocol)}"
+      }
+    } : {},
+    # Rules for private NLB listeners (if enabled)
+    var.is_create_private_lb ? {
+      for idx, rule in local.private_rule :
+      "allow_private_listener_${rule.port}_${lower(rule.protocol)}" => {
+        port        = rule.port
+        protocol    = lower(rule.protocol)
+        cidr_blocks = ["0.0.0.0/0"]
+        description = "Allow access to private NLB listener on port ${rule.port}/${upper(rule.protocol)}"
+      }
+    } : {}
+  )
+
+  security_group_ingress_rules = merge(
+    # Dynamic rules based on NLB listeners
+    local.dynamic_listener_rules,
+    # NFS access for EFS (self-referencing)
+    {
+      allow_nfs_from_self = {
+        port                     = "2049"
+        protocol                 = "tcp"
+        source_security_group_id = var.is_create_security_group ? aws_security_group.this[0].id : null
+        description              = "NFS access for EFS mount targets"
+      }
     },
-  var.security_group_ingress_rules)
+    # User-provided custom rules (highest precedence)
+    var.security_group_ingress_rules
+  )
 
   network_interfaces = var.is_create_lb ? [] : [{
     associate_public_ip_address = true

@@ -20,12 +20,12 @@ output "vpn_private_dns" {
 
 output "efs_id" {
   description = "The ID that identifies the file system for pritunl vpn"
-  value       = module.efs.id
+  value       = aws_efs_file_system.pritunl.id
 }
 
 output "efs_dns_name" {
   description = "The DNS name for the filesystem"
-  value       = module.efs.dns_name
+  value       = aws_efs_file_system.pritunl.dns_name
 }
 
 output "security_group_id" {
@@ -56,4 +56,19 @@ output "aws_lb_public_zone_id" {
 output "aws_lb_private_zone_id" {
   description = "zone id of the application loadbalancer"
   value       = try(aws_lb.private[0].zone_id, "")
+}
+
+output "autoscaling_group_name" {
+  description = "The name of the Auto Scaling Group"
+  value       = aws_autoscaling_group.this.name
+}
+
+output "autoscaling_group_id" {
+  description = "The ID of the Auto Scaling Group"
+  value       = aws_autoscaling_group.this.id
+}
+
+output "autoscaling_group_arn" {
+  description = "The ARN of the Auto Scaling Group"
+  value       = aws_autoscaling_group.this.arn
 }

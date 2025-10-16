@@ -15,3 +15,6 @@ data "aws_ami" "amazon_linux" {
 data "aws_vpc" "this" {
   id = var.vpc_id
 }
+
+# Get current AWS region from provider configuration
+data "aws_region" "current" {}

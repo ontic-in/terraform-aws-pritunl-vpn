@@ -11,7 +11,6 @@ resource "aws_autoscaling_group" "this" {
     version = "$Latest"
   }
 
-  target_group_arns = concat(aws_lb_target_group.public.*.arn, aws_lb_target_group.private.*.arn)
   dynamic "tag" {
     for_each = merge(local.tags, { Name = local.name })
     content {
@@ -26,9 +25,25 @@ resource "aws_autoscaling_group" "this" {
   }
 }
 
+# Attach public NLB target groups to ASG
+resource "aws_autoscaling_attachment" "public" {
+  count = var.is_create_lb ? length(local.public_rule) : 0
+
+  autoscaling_group_name = aws_autoscaling_group.this.name
+  lb_target_group_arn    = aws_lb_target_group.public[count.index].arn
+}
+
+# Attach private NLB target groups to ASG
+resource "aws_autoscaling_attachment" "private" {
+  count = var.is_create_private_lb ? length(local.private_rule) : 0
+
+  autoscaling_group_name = aws_autoscaling_group.this.name
+  lb_target_group_arn    = aws_lb_target_group.private[count.index].arn
+}
+
 
 resource "aws_autoscaling_policy" "this" {
-  name                   = "pritunl-vpn-auto-scaling-policy"
+  name                   = "${local.name}-auto-scaling-policy"
   policy_type            = "TargetTrackingScaling"
   autoscaling_group_name = aws_autoscaling_group.this.name
   target_tracking_configuration {

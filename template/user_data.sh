@@ -13,10 +13,12 @@ else
 fi
 sudo python3 /tmp/get-pip.py
 sudo /usr/local/bin/pip3 install botocore
+
+# Install EFS utils but don't mount yet
 sudo yum install -y amazon-efs-utils
-sudo mkdir /mnt/efs
-echo "${efs_id}:/ /mnt/efs efs _netdev,noresvport,tls,iam 0 0" | sudo tee -a /etc/fstab
-sudo mount -a
+sudo mkdir -p /mnt/efs
+
+# Setup repositories for MongoDB and Pritunl
 sudo tee /etc/yum.repos.d/mongodb-org-5.0.repo << EOF
 [mongodb-org-5.0]
 name=MongoDB Repository
@@ -39,11 +41,32 @@ sudo rpm --import key.tmp; rm -f key.tmp
 sudo wget https://rpmfind.net/linux/epel/8/Everything/x86_64/Packages/p/pkcs11-helper-1.22-7.el8.x86_64.rpm
 sudo yum install pkcs11-helper-1.22-7.el8.x86_64.rpm
 sudo rm -f pkcs11-helper-1.22-7.el8.x86_64.rpm
+
+# Install WireGuard tools (required for WireGuard VPN support in Pritunl)
+sudo amazon-linux-extras install epel -y
+sudo yum install -y wireguard-tools
+
+# Install MongoDB and Pritunl (this creates mongod user)
 sudo yum -y install pritunl mongodb-org-5.0.9-1.amzn2
 
-sudo sed -i.bak "s/\/var\/lib\/mongo/\/mnt\/efs/g" /etc/mongod.conf
-sudo chown -R mongod:mongod /mnt/efs/
+# NOW mount EFS after mongod user exists
+# Use plain NFS4 (works without EFS file system policy)
+sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${efs_id}.efs.${aws_region}.amazonaws.com:/ /mnt/efs
+# If successful, add to fstab for persistence
+if mountpoint -q /mnt/efs; then
+  echo "${efs_id}.efs.${aws_region}.amazonaws.com:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport,_netdev 0 0" | sudo tee -a /etc/fstab
+fi
+# Wait for mount to stabilize
+sleep 3
 
+# Create MongoDB data directory and set permissions (now mongod user exists)
+sudo mkdir -p /mnt/efs/mongodb-data
+sudo chown -R mongod:mongod /mnt/efs/mongodb-data
+
+# Update MongoDB config to use EFS
+sudo sed -i.bak "s/\/var\/lib\/mongo/\/mnt\/efs\/mongodb-data/g" /etc/mongod.conf
+
+# Start services
 sudo systemctl start mongod pritunl
 sudo systemctl enable mongod pritunl
 sudo pritunl set-mongodb mongodb://localhost:27017/pritunl

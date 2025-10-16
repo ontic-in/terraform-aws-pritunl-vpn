@@ -85,6 +85,12 @@ variable "public_rule" {
       protocol              = "UDP"
       health_check_port     = 443
       health_check_protocol = "TCP"
+    },
+    {
+      port                  = 12384
+      protocol              = "UDP"
+      health_check_port     = 443
+      health_check_protocol = "TCP"
     }
   ]
 }
@@ -163,7 +169,7 @@ variable "is_create_lb" {
 variable "is_create_private_lb" {
   description = "if false this module will not create private lb for cost optimization"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "network_interfaces" {

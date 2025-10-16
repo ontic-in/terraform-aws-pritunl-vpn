@@ -45,18 +45,18 @@ locals {
     }
     # Allow NFS access within the same security group for EFS
     allow_nfs_from_self = {
-      port                         = "2049"
-      protocol                     = "tcp"
-      source_security_group_id     = var.is_create_security_group ? aws_security_group.this[0].id : null
-      description                  = "NFS access for EFS mount targets"
+      port                     = "2049"
+      protocol                 = "tcp"
+      source_security_group_id = var.is_create_security_group ? aws_security_group.this[0].id : null
+      description              = "NFS access for EFS mount targets"
     }
     },
   var.security_group_ingress_rules)
 
   network_interfaces = var.is_create_lb ? [] : [{
-        associate_public_ip_address = true
-        security_groups = local.security_group_ids
-      }] 
+    associate_public_ip_address = true
+    security_groups             = local.security_group_ids
+  }]
 
   vpc_security_group_ids = var.is_create_lb ? local.security_group_ids : []
 

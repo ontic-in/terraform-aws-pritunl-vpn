@@ -51,10 +51,10 @@ sudo yum -y install pritunl mongodb-org-5.0.9-1.amzn2
 
 # NOW mount EFS after mongod user exists
 # Use plain NFS4 (works without EFS file system policy)
-sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${efs_id}.efs.ap-south-1.amazonaws.com:/ /mnt/efs
+sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${efs_id}.efs.${aws_region}.amazonaws.com:/ /mnt/efs
 # If successful, add to fstab for persistence
 if mountpoint -q /mnt/efs; then
-  echo "${efs_id}.efs.ap-south-1.amazonaws.com:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport,_netdev 0 0" | sudo tee -a /etc/fstab
+  echo "${efs_id}.efs.${aws_region}.amazonaws.com:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport,_netdev 0 0" | sudo tee -a /etc/fstab
 fi
 # Wait for mount to stabilize
 sleep 3

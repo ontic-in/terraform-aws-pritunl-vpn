@@ -11,12 +11,12 @@ data "aws_iam_policy_document" "this" {
   }
   statement {
     sid = "ListEc2AndListInstanceProfiles"
-    actions = [
+    actions = sort([
       "iam:ListInstanceProfiles",
       "ec2:Describe*",
       "ec2:Search*",
       "ec2:Get*"
-    ]
+    ])
     resources = ["*"]
     condition {
       test     = "StringEquals"
